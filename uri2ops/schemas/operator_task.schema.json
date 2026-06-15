@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "URI Operator Task",
+  "type": "object",
+  "required": ["task", "steps"],
+  "$defs": {
+    "payloadLeaf": {
+      "oneOf": [
+        { "type": ["string", "number", "integer", "boolean", "null"] },
+        {
+          "type": "object",
+          "required": ["value"],
+          "properties": {
+            "value": {},
+            "secret": { "const": true }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "payloadValue": {
+      "oneOf": [
+        { "$ref": "#/$defs/payloadLeaf" },
+        {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/payloadLeaf" }
+        }
+      ]
+    }
+  },
+  "properties": {
+    "task": {
+      "type": "object",
+      "required": ["id"],
+      "properties": {
+        "id": { "type": "string" },
+        "description": { "type": "string" }
+      }
+    },
+    "steps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "uri", "operation"],
+        "properties": {
+          "id": { "type": "string" },
+          "uri": { "type": "string" },
+          "operation": { "type": "string" },
+          "kind": { "enum": ["query", "command", "assertion"] },
+          "payload": {
+            "type": "object",
+            "additionalProperties": { "$ref": "#/$defs/payloadValue" }
+          },
+          "depends_on": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "expect": { "type": "object" }
+        }
+      }
+    }
+  }
+}

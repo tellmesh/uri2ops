@@ -1,0 +1,195 @@
+version: 1
+
+schemes:
+  browser:
+    operations:
+      open:
+        kind: command
+        handler: python://agents.operators.browser_operator.adapters.browser_router:open_page
+        input_schema: operator.browser.v1.BrowserPageOpenCommand
+        output_schema: operator.common.v1.OperationResult
+        emits:
+          - operator.events.v1.OperatorCommandRequested
+          - operator.events.v1.OperatorCommandCompleted
+        side_effects: true
+        requires_policy: true
+        adapters: [mock, playwright]
+
+      extract_dom:
+        kind: query
+        handler: python://agents.operators.browser_operator.adapters.browser_router:extract_dom
+        output_schema: operator.browser.v1.DomSnapshot
+        side_effects: false
+        produces_artifact: true
+        adapters: [mock, playwright]
+
+      screenshot:
+        kind: query
+        handler: python://agents.operators.browser_operator.adapters.browser_router:screenshot
+        output_schema: operator.screen.v1.ScreenObservation
+        side_effects: false
+        produces_artifact: true
+        adapters: [mock, playwright]
+
+      capture_page:
+        kind: query
+        handler: python://agents.operators.browser_operator.adapters.browser_router:capture_page
+        output_schema: operator.screen.v1.ScreenObservation
+        side_effects: false
+        produces_artifact: true
+        adapters: [mock, playwright]
+
+      click:
+        kind: command
+        handler: python://agents.operators.browser_operator.adapters.browser_router:click
+        input_schema: operator.browser.v1.BrowserClickCommand
+        output_schema: operator.common.v1.OperationResult
+        side_effects: true
+        requires_policy: true
+        adapters: [mock, playwright]
+
+  assertion:
+    operations:
+      check:
+        kind: query
+        handler: python://agents.operators.common.assertion:check
+        output_schema: operator.common.v1.OperationResult
+        side_effects: false
+        requires_policy: false
+        adapters: [builtin]
+
+  screen:
+    operations:
+      observe:
+        kind: query
+        handler: python://agents.operators.desktop_operator.adapters.screen_router:observe
+        output_schema: operator.screen.v1.ScreenObservation
+        side_effects: false
+        produces_artifact: true
+        adapters: [mock, gnome]
+
+  input:
+    operations:
+      type:
+        kind: command
+        handler: python://agents.operators.desktop_operator.adapters.input_router:type_text
+        input_schema: operator.input.v1.TypeTextCommand
+        output_schema: operator.common.v1.OperationResult
+        side_effects: true
+        requires_policy: true
+        adapters: [mock, gnome]
+
+  android:
+    operations:
+      screenshot:
+        kind: query
+        handler: python://agents.operators.desktop_operator.adapters.android_router:screenshot
+        input_schema: operator.android.v1.AndroidScreenshotCommand
+        output_schema: operator.screen.v1.ScreenObservation
+        side_effects: false
+        produces_artifact: true
+        adapters: [mock, adb]
+
+      dump_ui:
+        kind: query
+        handler: python://agents.operators.desktop_operator.adapters.android_router:dump_ui
+        input_schema: operator.android.v1.AndroidUiDump
+        output_schema: operator.android.v1.AndroidUiDump
+        side_effects: false
+        produces_artifact: true
+        adapters: [mock, adb]
+
+      tap:
+        kind: command
+        handler: python://agents.operators.desktop_operator.adapters.android_router:tap
+        input_schema: operator.android.v1.AndroidTapCommand
+        output_schema: operator.common.v1.OperationResult
+        side_effects: true
+        requires_policy: true
+        adapters: [mock, adb]
+
+  pcwin:
+    operations:
+      focus:
+        kind: command
+        handler: python://agents.operators.desktop_operator.adapters.pcwin_router:focus
+        input_schema: operator.pcwin.v1.WindowFocusCommand
+        output_schema: operator.pcwin.v1.WindowFocusResult
+        side_effects: true
+        requires_policy: true
+        adapters: [mock, uia]
+
+      click:
+        kind: command
+        handler: python://agents.operators.desktop_operator.adapters.pcwin_router:click
+        input_schema: operator.pcwin.v1.ControlClickCommand
+        output_schema: operator.pcwin.v1.ControlClickResult
+        side_effects: true
+        requires_policy: true
+        adapters: [mock, uia]
+
+  robot:
+    operations:
+      state:
+        kind: query
+        handler: python://agents.operators.device_robot_operator.adapters.physical_mock:robot_state
+        output_schema: operator.robot.v1.RobotState
+        side_effects: false
+        produces_artifact: true
+        adapters: [mock]
+
+      move:
+        kind: command
+        handler: python://agents.operators.device_robot_operator.adapters.physical_mock:robot_move
+        input_schema: operator.robot.v1.RobotMoveCommand
+        output_schema: operator.common.v1.OperationResult
+        side_effects: true
+        requires_policy: true
+        adapters: [mock]
+
+      stop:
+        kind: command
+        handler: python://agents.operators.device_robot_operator.adapters.physical_mock:robot_stop
+        input_schema: operator.robot.v1.RobotStopCommand
+        output_schema: operator.common.v1.OperationResult
+        side_effects: true
+        requires_policy: true
+        adapters: [mock]
+
+      mission_start:
+        kind: command
+        handler: python://agents.operators.device_robot_operator.adapters.physical_mock:robot_mission_start
+        input_schema: operator.robot.v1.RobotMissionStartCommand
+        output_schema: operator.common.v1.OperationResult
+        side_effects: true
+        requires_policy: true
+        adapters: [mock]
+
+  device:
+    operations:
+      status:
+        kind: query
+        handler: python://agents.operators.device_robot_operator.adapters.physical_mock:device_status
+        output_schema: operator.device.v1.DeviceStatus
+        side_effects: false
+        produces_artifact: true
+        adapters: [mock]
+
+      read:
+        kind: query
+        handler: python://agents.operators.device_robot_operator.adapters.physical_mock:device_read
+        input_schema: operator.device.v1.DeviceReadCommand
+        output_schema: operator.device.v1.DeviceReading
+        side_effects: false
+        produces_artifact: true
+        adapters: [mock]
+
+      write:
+        kind: command
+        handler: python://agents.operators.device_robot_operator.adapters.physical_mock:device_write
+        input_schema: operator.device.v1.DeviceWriteCommand
+        output_schema: operator.common.v1.OperationResult
+        side_effects: true
+        requires_policy: true
+        adapters: [mock]
+

@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "URI Operation Registry",
+  "type": "object",
+  "required": ["version", "schemes"],
+  "properties": {
+    "version": { "type": "integer", "minimum": 1 },
+    "schemes": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["operations"],
+        "properties": {
+          "operations": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "required": ["kind", "handler"],
+              "properties": {
+                "kind": { "enum": ["query", "command", "assertion"] },
+                "handler": { "type": "string", "pattern": "^python://[^:]+:[^:]+$" },
+                "input_schema": { "type": "string" },
+                "output_schema": { "type": "string" },
+                "emits": {
+                  "type": "array",
+                  "items": { "type": "string" }
+                },
+                "side_effects": { "type": "boolean" },
+                "requires_policy": { "type": "boolean" },
+                "produces_artifact": { "type": "boolean" },
+                "adapters": {
+                  "type": "array",
+                  "items": { "type": "string" },
+                  "minItems": 1
+                }
+              },
+              "additionalProperties": false
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}
