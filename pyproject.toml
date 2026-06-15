@@ -15,12 +15,16 @@ dependencies = [
     "jsonschema>=4.23",
     "pyyaml>=6.0",
     "typer>=0.26.7",
+    "uri3",
 ]
 
 [project.optional-dependencies]
 browser = ["playwright>=1.40"]
 windows = ["pywinauto>=0.6"]
 server = ["uvicorn>=0.27"]
+
+[tool.uv.sources]
+uri3 = { path = "../uri3", editable = true }
 
 [project.scripts]
 uri2ops = "uri2ops.cli:main"

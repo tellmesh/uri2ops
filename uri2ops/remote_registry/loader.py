@@ -14,6 +14,25 @@ from uri2ops.operation_registry.models import OperationRegistry, OperationSpec
 DEFAULT_CONFIG_PATH = "config/operator_registry.uri.yaml"
 
 
+def _split_checkout_root(root: Path | None = None) -> Path | None:
+    try:
+        from uri3.config.repo_root import find_repo_root
+
+        return find_repo_root(root or Path.cwd(), strict=False)
+    except Exception:
+        return None
+
+
+def _effective_root(root: Path | None = None) -> Path:
+    base = Path(root) if root else Path.cwd()
+    if (base / DEFAULT_CONFIG_PATH).is_file():
+        return base
+    split_root = _split_checkout_root(base)
+    if split_root is not None and (split_root / DEFAULT_CONFIG_PATH).is_file():
+        return split_root
+    return base
+
+
 def _unwrap_config_document(data: dict[str, Any]) -> dict[str, Any]:
     if (
         data.get("apiVersion") == "uri3.io/v1"
@@ -25,12 +44,13 @@ def _unwrap_config_document(data: dict[str, Any]) -> dict[str, Any]:
 
 
 def registry_config_path(root: Path | None = None) -> Path:
-    base = Path(root) if root else Path.cwd()
+    base = _effective_root(root)
     return base / DEFAULT_CONFIG_PATH
 
 
 def load_registry_config(root: Path | None = None) -> dict[str, Any]:
-    path = registry_config_path(root)
+    base = _effective_root(root)
+    path = registry_config_path(base)
     if not path.exists():
         return {"version": 1, "local": {"path": str(default_registry_path())}, "remotes": []}
     data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
@@ -102,7 +122,7 @@ def resolve_operation_registry(
 ) -> OperationRegistry:
     if path is not None:
         return load_operation_registry(path, validate_schema=validate_schema)
-    base = Path(root) if root else Path.cwd()
+    base = _effective_root(Path(root) if root else None)
     config = load_registry_config(base)
     local_path = (config.get("local") or {}).get("path") or str(default_registry_path())
     documents = [_load_source(str(local_path), root=base)]

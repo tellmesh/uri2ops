@@ -15,12 +15,37 @@ _CANONICAL_ENVIRONMENTS = frozenset({"local", "docker", "mock", "remote"})
 _PORT_RE = re.compile(r":(\d+)/")
 
 
-def registry_schema_path(*, root: Path | None = None) -> Path:
-    candidates = [root] if root is not None else []
-    candidates.extend([Path.cwd(), *Path.cwd().parents])
-    for base in candidates:
-        if base is None:
+def _split_checkout_root(start: Path | None = None) -> Path | None:
+    try:
+        from uri3.config.repo_root import find_repo_root
+
+        return find_repo_root(start or Path.cwd(), strict=False)
+    except Exception:
+        return None
+
+
+def _candidate_roots(root: Path | None = None) -> list[Path]:
+    raw_candidates: list[Path | None] = []
+    if root is not None:
+        raw_candidates.append(root)
+    cwd = Path.cwd()
+    raw_candidates.extend([cwd, *cwd.parents])
+    raw_candidates.append(_split_checkout_root(root or cwd))
+
+    candidates: list[Path] = []
+    seen: set[Path] = set()
+    for candidate in raw_candidates:
+        if candidate is None:
             continue
+        resolved = candidate.resolve()
+        if resolved not in seen:
+            seen.add(resolved)
+            candidates.append(resolved)
+    return candidates
+
+
+def registry_schema_path(*, root: Path | None = None) -> Path:
+    for base in _candidate_roots(root):
         path = base / "schemas" / "runtime_environments.schema.json"
         if path.is_file():
             return path
@@ -28,11 +53,7 @@ def registry_schema_path(*, root: Path | None = None) -> Path:
 
 
 def _find_registry_path(root: Path | None = None) -> Path | None:
-    candidates = [root] if root is not None else []
-    candidates.extend([Path.cwd(), *Path.cwd().parents])
-    for base in candidates:
-        if base is None:
-            continue
+    for base in _candidate_roots(root):
         path = base / "config" / "runtime_environments.yaml"
         if path.is_file():
             return path

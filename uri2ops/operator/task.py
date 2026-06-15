@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from typing import Any
 
@@ -31,5 +32,21 @@ def parse_task(data: dict[str, Any], *, default_id: str = "task") -> OperatorTas
 def load_task(path: str | Path) -> OperatorTask:
     import yaml
 
-    data: dict[str, Any] = yaml.safe_load(Path(path).read_text(encoding="utf-8")) or {}
-    return parse_task(data, default_id=Path(path).stem)
+    task_path = _resolve_task_path(Path(path))
+    data: dict[str, Any] = yaml.safe_load(task_path.read_text(encoding="utf-8")) or {}
+    return parse_task(data, default_id=task_path.stem)
+
+
+def _resolve_task_path(path: Path) -> Path:
+    if path.is_absolute() or path.exists():
+        return path
+    if raw := os.getenv("HYPERVISOR_REPO_ROOT"):
+        candidate = Path(raw).expanduser() / path
+        if candidate.exists():
+            return candidate
+    for base in (Path.cwd(), Path(__file__).resolve(), *Path(__file__).resolve().parents):
+        for root in (base, base / "hypervisor", base / "wronai" / "hypervisor"):
+            candidate = root / path
+            if candidate.exists():
+                return candidate
+    return path
