@@ -221,7 +221,7 @@ git:
     format: '{prefix}{version}'
 strategies:
   python:
-    test: pytest tests/ -q --ignore=tests/test_runtime_profiles.py --ignore=tests/test_uri2ops_serve.py || pytest tests/ -q -k 'not serve and not runtime_profiles'
+    test: env HYPERVISOR_REPO_ROOT=/home/tom/github/tellmesh/tellmesh uv run --extra dev pytest tests/ -q
     build: python -m build
     publish: twine upload dist/uri2ops-{version}*
     publish_enabled: true

@@ -1,5 +1,22 @@
 # Changelog
 
+## [Unreleased]
+
+## [0.5.12] - 2026-06-15
+
+### Docs
+- Update README.md
+
+### Test
+- Update tests/conftest.py
+
+### Other
+- Update .gitignore
+- Update contracts/agents/codex_nl_smoke_agent.yaml
+- Update contracts/agents/codex_uri_smoke_agent.yaml
+- Update uv.lock
+
+
 ## 0.6.0 — 2026-06-15
 
 - Added mock physical operations for robot and device URI planning.
