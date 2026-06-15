@@ -1,0 +1,163 @@
+$schema: schemas/runtime_environments.schema.json
+apiVersion: uri3.io/v1
+kind: RuntimeEnvironmentRegistry
+metadata:
+  id: runtime-environments
+  description: Standard execution environment labels, host requirements, permissions and operator launch profiles.
+
+defaults:
+  execution_environment: local
+  policy: dev
+  adapter: auto
+
+# Layer 1 — execution environment (per MCP/A2A/uri call)
+# Answers: where does Playwright/browser code run, what does the HOST need?
+environments:
+  local:
+    label: local
+    aliases: [python, host, inprocess]
+    isolation: process
+    description: In-process Python/Playwright on the operator host (browser-operator :8793).
+    host_requirements:
+      python_extras: [browser]
+      setup:
+        - pip install -e '.[browser]'
+        - python -m playwright install chromium
+    permissions:
+      network_egress: true
+      filesystem_write: artifacts_only
+      host_gui: optional
+    policy:
+      mutations_require: [approve_or_dev_policy]
+      adapters: [auto, mock, playwright]
+
+  docker:
+    label: docker
+    aliases: [container]
+    isolation: container
+    description: Playwright in a Docker container on the operator host; no local pip/playwright needed.
+    host_requirements:
+      host_commands: [docker]
+    env:
+      URI2OPS_DOCKER_PLAYWRIGHT_IMAGE: mcr.microsoft.com/playwright/python:v1.49.1-noble
+      URI2OPS_DOCKER_NETWORK: host
+    permissions:
+      docker_run: true
+      network_egress: true
+      filesystem_write: ephemeral_container
+    policy:
+      mutations_require: [approve_or_dev_policy]
+      adapters: [playwright]
+    notes:
+      - Requires a working Docker daemon on the host.
+      - First run pulls the Playwright image (~1 GB).
+      - On Linux set URI2OPS_DOCKER_NETWORK=host so the container can reach localhost:8788.
+
+  mock:
+    label: mock
+    isolation: none
+    description: Deterministic mock browser adapter; no Playwright, no Docker, no network browser.
+    host_requirements: {}
+    permissions:
+      network_egress: false
+      filesystem_write: artifacts_only
+    policy:
+      mutations_require: [approve_or_dev_policy]
+      adapters: [mock]
+
+  remote:
+    label: remote
+    isolation: remote_process
+    description: Delegate browser ops to another uri2ops instance via HTTP MCP.
+    host_requirements:
+      config_one_of:
+        - arguments.remote_url
+        - arguments.operator_url
+        - env.URI2OPS_REMOTE_URL
+    permissions:
+      network_egress: true
+    connects_to:
+      protocol: mcp
+      path: /mcp/tools/call
+    policy:
+      mutations_require: [approve_or_dev_policy]
+      adapters: [auto, mock, playwright]
+
+# Layer 2 — operator deployment (hypervisor lifecycle)
+# Answers: which agent/service, which port, which URI schemes?
+operators:
+  browser-operator.local:
+    agent_ref: agent://browser-operator
+    role: browser_operator
+    runtime_package: agents/operators/browser_operator
+    port: 8793
+    schemes: [browser]
+    default_execution_environment: local
+    launch:
+      hypervisor: hypervisor run-agent browser-operator.local --detach --wait-healthy
+      direct: uvicorn agents.operators.browser_operator.main:app --host 127.0.0.1 --port 8793
+    endpoints:
+      health: http://127.0.0.1:8793/health
+      environments: http://127.0.0.1:8793/environments
+      mcp_tools: http://127.0.0.1:8793/mcp/tools
+      mcp_call: http://127.0.0.1:8793/mcp/tools/call
+    contracts:
+      operator: agents/operators/browser_operator.yaml
+      domain_pack: domains/browser_ops/domain.yaml
+
+  desktop-operator.local:
+    agent_ref: agent://desktop-operator
+    role: desktop_operator
+    runtime_package: agents/operators/desktop_operator
+    port: 8791
+    schemes: [screen, input, pcwin, android]
+    default_execution_environment: mock
+    launch:
+      hypervisor: hypervisor run-agent desktop-operator.local --detach --wait-healthy
+      direct: uvicorn agents.operators.desktop_operator.main:app --host 127.0.0.1 --port 8791
+    endpoints:
+      health: http://127.0.0.1:8791/health
+      environments: http://127.0.0.1:8791/environments
+      mcp_call: http://127.0.0.1:8791/mcp/tools/call
+    host_env_forward:
+      - DISPLAY
+      - WAYLAND_DISPLAY
+      - XDG_RUNTIME_DIR
+      - DBUS_SESSION_BUS_ADDRESS
+      - XAUTHORITY
+    contracts:
+      operator: agents/operators/desktop_operator.yaml
+      domain_pack: domains/desktop_ops/domain.yaml
+
+  device-robot-operator.local:
+    agent_ref: agent://device-robot-operator
+    role: device_robot_operator
+    runtime_package: agents/operators/device_robot_operator
+    port: 8792
+    schemes: [robot, device]
+    default_execution_environment: mock
+    launch:
+      hypervisor: hypervisor run-agent device-robot-operator.local --detach --wait-healthy
+      direct: uvicorn agents.operators.device_robot_operator.main:app --host 127.0.0.1 --port 8792
+    endpoints:
+      health: http://127.0.0.1:8792/health
+      environments: http://127.0.0.1:8792/environments
+      mcp_call: http://127.0.0.1:8792/mcp/tools/call
+    contracts:
+      operator: agents/operators/device_robot_operator.yaml
+      domain_pack: domains/physical_ops/domain.yaml
+
+# Layer 3 — control plane (orchestration only, never executes browser)
+control_plane:
+  hypervisor-dashboard.local:
+    agent_ref: agent://hypervisor-dashboard
+    port: 8788
+    runtime_package: agents/system/hypervisor_dashboard
+    role: [observer, renderer, controller]
+    launch:
+      hypervisor: make start
+      direct: uvicorn agents.system.hypervisor_dashboard.main:app --host 127.0.0.1 --port 8788
+    endpoints:
+      health: http://127.0.0.1:8788/health
+      uri_call: http://127.0.0.1:8788/api/uri/call
+    must_not_execute: [browser, screen, pcwin, android, robot, device]

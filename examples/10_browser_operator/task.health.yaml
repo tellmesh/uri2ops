@@ -1,0 +1,28 @@
+task:
+  id: check-agent-health
+  description: Open the agent health endpoint and verify OK text.
+
+steps:
+  - id: open_health
+    uri: browser://chrome/page/open
+    operation: open
+    kind: command
+    payload:
+      url: http://localhost:8101/health
+
+  - id: read_dom
+    uri: browser://chrome/page/active
+    operation: extract_dom
+    kind: query
+    depends_on:
+      - open_health
+
+  - id: verify_ok
+    uri: assertion://contains
+    operation: check
+    kind: query
+    payload:
+      actual_from: read_dom.text
+      expected: ok
+    depends_on:
+      - read_dom
