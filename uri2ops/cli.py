@@ -9,9 +9,10 @@ import yaml
 
 from uri2ops.operation_registry.loader import load_operation_registry
 from uri2ops.operation_registry.validator import validate_operation_registry
+from uri2ops.operator.graph_bridge import convert_graph_file, parse_operator_task, write_operator_task
 from uri2ops.operator.runner import plan_task, run_task
 from uri2ops.operator.task import load_task
-from uri2ops.operator.validator import validate_task_file
+from uri2ops.operator.validator import validate_task_data, validate_task_file
 from uri2ops.remote_registry.loader import list_remote_sources, resolve_operation_registry
 
 
@@ -73,6 +74,33 @@ def run_cmd(args) -> int:
     result = run_task(task, dry_run=args.dry_run, approve=args.approve, adapter=args.adapter)
     _print(result.to_dict())
     return 0 if result.ok else 2
+
+
+def import_graph_cmd(args) -> int:
+    payload, warnings = convert_graph_file(args.path)
+    body = {key: value for key, value in payload.items() if key in {"task", "steps"}}
+    if args.validate:
+        errors = validate_task_data(body)
+        if errors:
+            _print({"ok": False, "errors": errors})
+            return 1
+    if args.out:
+        path = write_operator_task(payload, args.out)
+        output = {"ok": True, "path": str(path), "skipped_steps": payload.get("skipped_steps", [])}
+        if warnings:
+            output["warnings"] = warnings
+        _print(output)
+    else:
+        emitted = dict(payload)
+        if warnings:
+            emitted["warnings"] = warnings
+        _print(emitted)
+    if args.run:
+        task = parse_operator_task(payload)
+        result = run_task(task, dry_run=args.dry_run, approve=args.approve, adapter=args.adapter)
+        _print(result.to_dict())
+        return 0 if result.ok else 2
+    return 0
 
 
 def serve_cmd(args) -> int:
@@ -179,6 +207,16 @@ def main(argv: list[str] | None = None) -> int:
     run.add_argument("--approve", action="store_true")
     run.add_argument("--adapter", default="auto", choices=["mock", "playwright", "adb", "uia", "auto"])
     run.set_defaults(func=run_cmd)
+
+    imp = sub.add_parser("import-graph", help="Extract uri2ops operator task from nl2uri graph/task YAML")
+    imp.add_argument("path")
+    imp.add_argument("-o", "--out", help="Write operator task YAML to this path")
+    imp.add_argument("--validate", action="store_true", help="Validate converted task against uri2ops registry")
+    imp.add_argument("--run", action="store_true", help="Run converted task after import")
+    imp.add_argument("--dry-run", action="store_true")
+    imp.add_argument("--approve", action="store_true")
+    imp.add_argument("--adapter", default="mock", choices=["mock", "playwright", "adb", "uia", "auto"])
+    imp.set_defaults(func=import_graph_cmd)
 
     serve = sub.add_parser("serve", help="Run uri2ops HTTP daemon with A2A and MCP wrappers")
     serve.add_argument("--host", default="127.0.0.1")

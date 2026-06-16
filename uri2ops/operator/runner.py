@@ -8,6 +8,7 @@ from uri2ops.operation_registry.dispatcher import call_handler
 from uri2ops.operation_registry.loader import load_operation_registry
 from uri2ops.remote_registry.loader import resolve_operation_registry
 from uri2ops.operation_registry.models import OperationSpec
+from uri2ops.operation_registry.uri_mapping import resolve_registry_target
 from uri3.config.repo_root import ensure_repo_root_on_syspath
 
 ensure_repo_root_on_syspath()
@@ -29,6 +30,10 @@ INPUT_SCHEMES = frozenset({"input"})
 
 def _scheme(uri: str) -> str:
     return uri.split(":", 1)[0]
+
+
+def _registry_target(step) -> tuple[str, str]:
+    return resolve_registry_target(step.uri, step.operation)
 
 
 def _resolve_value(expr: str, results: dict[str, dict[str, Any]]) -> Any:
@@ -100,8 +105,8 @@ def plan_task(task: OperatorTask, *, root: Path | None = None) -> list[dict[str,
     policy = load_operator_policy(root=root)
     plan: list[dict[str, Any]] = []
     for step in topological_steps(task):
-        scheme = _scheme(step.uri)
-        spec = registry.require(scheme, step.operation)
+        scheme, operation = _registry_target(step)
+        spec = registry.require(scheme, operation)
         plan.append(
             {
                 "id": step.id,
@@ -147,8 +152,8 @@ def run_task(
 
     try:
         for step in topological_steps(task):
-            scheme = _scheme(step.uri)
-            spec = registry.require(scheme, step.operation)
+            scheme, operation = _registry_target(step)
+            spec = registry.require(scheme, operation)
             step_adapter = _resolve_adapter(spec, adapter, runtime_context)
             runtime_context["adapter"] = step_adapter
             append_event(

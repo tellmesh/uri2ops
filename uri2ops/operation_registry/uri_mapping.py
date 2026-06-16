@@ -30,3 +30,10 @@ def registry_scheme(scheme: str) -> str:
 
 def registry_operation(scheme: str, operation: str) -> str:
     return OPERATION_ALIASES.get((scheme, operation), operation)
+
+
+def resolve_registry_target(uri: str, operation: str) -> tuple[str, str]:
+    raw_scheme = uri.split(":", 1)[0]
+    scheme = registry_scheme(raw_scheme)
+    op = registry_operation(raw_scheme, operation)
+    return scheme, op

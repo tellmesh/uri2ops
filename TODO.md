@@ -1,42 +1,45 @@
-# TODO
+# TODO — uri2ops
+
+**Version:** 0.5.12 · **Role:** URI Operation Registry + Operator Runtime
+
+> Audyt: 2026-06-16
 
 ## v0.1.x
 
-- [x] Add better redaction for payloads marked `secret=true`.
-- [x] Add stricter operation registry schema validation.
-- [x] Add artifact resolver compatible with `artifact://...`.
-- [x] Add policy file loading from `config/operator_policy.uri.yaml`.
+- [x] Operation registry + operator task schema
+- [x] Redaction `secret=true` payloads
+- [x] Registry schema validation (jsonschema)
+- [x] Artifact resolver `artifact://…`
+- [x] Policy z `config/operator_policy.uri.yaml`
 
-## v0.2
+## v0.2 — browser
 
-- [x] Add optional Playwright adapter.
-- [x] Add real `browser://chrome/page/open` execution.
-- [x] Add DOM extraction using Playwright.
-- [x] Add screenshot artifact generation.
+- [x] Playwright adapter (`mock` / `playwright` / `auto`)
+- [x] `browser://chrome/page/open`, DOM, screenshot
 
-## v0.3
+## v0.3 — android
 
-- [x] Add Android adapter: `adb` + UI Automator.
-- [x] Add `android://device/{id}/screenshot`.
-- [x] Add `android://device/{id}/dump_ui`.
-- [x] Add `android://device/{id}/tap`.
+- [x] `adb` + mock: screenshot, dump_ui, tap
 
-## v0.4
+## v0.4 — windows
 
-- [x] Add Windows adapter: UI Automation.
-- [x] Add `pcwin://window/{id}/focus`.
-- [x] Add `pcwin://control/{automation_id}/click`.
+- [x] `uia` + mock: focus, click
 
-## v0.5
+## v0.5 — serve
 
-- [x] Add `uri2ops serve` daemon mode.
-- [x] Add A2A/MCP wrapper.
-- [x] Add remote operator registry.
+- [x] `uri2ops serve` (A2A + MCP)
+- [x] Remote registry merge (`config/operator_registry.uri.yaml`)
 
-## v0.6
+## v0.6 — physical + bridge
 
-- [x] Add mock `robot://` operations for state, move, stop and mission start.
-- [x] Add mock `device://` operations for status, read and write.
-- [ ] Add real ROS2 adapter behind `robot://`.
-- [ ] Add real MQTT/Modbus/OPC UA adapters behind `device://`.
-- [ ] Add physical-operation safety policy fixtures for hardware labs.
+- [x] Mock `robot://` i `device://`
+- [x] **`uri2ops import-graph`** — nl2uri workflow/task → operator task (`operator/graph_bridge.py`)
+- [x] Examples: `10`, `12`, `13`, `16`, `36` + `examples/run_all.sh`
+- [x] Mapowanie `dom://` → `browser` + `extract_dom` w runner/validator
+
+## Otwarte
+
+- [ ] Real ROS2 adapter za `robot://`
+- [ ] Real MQTT/Modbus/OPC UA za `device://`
+- [ ] Physical-operation safety policy fixtures (hardware labs)
+- [ ] Przykłady voice/desktop gnome w standalone repo (canonical: tellmesh/agents)

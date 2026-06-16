@@ -79,10 +79,13 @@ uri2ops executes operator actions through URI-addressed operations.
 ## CLI
 
 ```bash
+bash examples/run_all.sh
 uri2ops operations list
 uri2ops operations describe browser open
 uri2ops validate examples/10_browser_operator/task.health.yaml
 uri2ops plan examples/10_browser_operator/task.health.yaml
+uri2ops import-graph examples/16_nl2uri_operator_bridge/workflow.health.yaml --validate --out /tmp/task.yaml
+uri2ops run /tmp/task.yaml --adapter mock --approve
 uri2ops run examples/10_browser_operator/task.health.yaml --adapter mock --approve
 uri2ops run examples/10_browser_operator/task.health.yaml --adapter playwright --approve
 uri2ops run examples/10_browser_operator/task.health.yaml --adapter auto --approve
@@ -109,7 +112,13 @@ packages/uri2ops/
   CHANGELOG.md
   TODO.md
 contracts/proto/operator/
-examples/10_browser_operator/
+examples/
+  10_browser_operator/
+  16_nl2uri_operator_bridge/
+  12_android_operator/   -> tellmesh/examples (symlink)
+  13_pcwin_operator/     -> tellmesh/examples (symlink)
+  36_physical_ops/       -> tellmesh/examples (symlink)
+  run_all.sh
 tests/test_uri2ops_*.py
 ```
 
@@ -154,6 +163,7 @@ steps:
 - [Example 10: Browser Operator](../../examples/10_browser_operator/README.md)
 - [CHANGELOG](CHANGELOG.md)
 - [TODO](TODO.md)
+- Org status: [`../TODO_STATUS.md`](../TODO_STATUS.md)
 
 
 ## License

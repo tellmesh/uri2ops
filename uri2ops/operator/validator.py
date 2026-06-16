@@ -8,6 +8,7 @@ import yaml
 from jsonschema import Draft202012Validator
 
 from uri2ops.operation_registry.models import OperationRegistry
+from uri2ops.operation_registry.uri_mapping import resolve_registry_target
 from uri2ops.remote_registry.loader import resolve_operation_registry
 
 from .task import load_task, parse_task
@@ -25,9 +26,9 @@ def validate_task_data(data: dict[str, Any], *, registry: OperationRegistry | No
     task = parse_task(data)
     registry = registry or resolve_operation_registry()
     for step in task.steps:
-        scheme = step.uri.split(":", 1)[0]
-        if not registry.get(scheme, step.operation):
-            errors.append(f"Unsupported operation {scheme}:{step.operation} in step {step.id}")
+        scheme, operation = resolve_registry_target(step.uri, step.operation)
+        if not registry.get(scheme, operation):
+            errors.append(f"Unsupported operation {scheme}:{operation} in step {step.id}")
     return errors
 
 

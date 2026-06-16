@@ -1,4 +1,10 @@
-# Example 10 — Browser Operator Mock
+## Run all examples
+
+```bash
+bash examples/run_all.sh
+```
+
+## Example 10 — Browser Operator Mock
 
 This example validates and executes a simple browser-like workflow using the mock adapter.
 
