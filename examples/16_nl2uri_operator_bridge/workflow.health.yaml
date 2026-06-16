@@ -1,0 +1,55 @@
+nl2uri:
+  version: 1
+  kind: workflow_graph
+source_prompt: wygeneruj agenta pogodowego, uruchom go lokalnie i sprawdź health w Chrome
+graph:
+  id: weather-health
+  version: 1
+  kind: workflow
+  description: Generate weather agent, run locally, verify health in Chrome
+  nodes:
+    - id: generate_weather_domain
+      type: domain_pack
+      uri: domain://weather-map
+      operation: generate
+      kind: command
+    - id: generate_weather_agent
+      type: agent
+      uri: agent://weather-map-agent
+      operation: generate
+      kind: command
+      depends_on:
+        - generate_weather_domain
+    - id: run_weather_agent
+      type: deployment
+      uri: hypervisor://deployment/weather-map-agent.local/run
+      operation: run
+      kind: command
+      depends_on:
+        - generate_weather_agent
+    - id: open_health
+      type: browser
+      uri: browser://chrome/page/open
+      operation: open
+      kind: command
+      payload:
+        url: http://localhost:8101/health
+      depends_on:
+        - run_weather_agent
+    - id: read_health_dom
+      type: browser
+      uri: dom://chrome/active/body
+      operation: read
+      kind: query
+      depends_on:
+        - open_health
+    - id: verify_ok
+      type: assertion
+      uri: assertion://contains
+      operation: check
+      kind: assertion
+      depends_on:
+        - read_health_dom
+      payload:
+        actual_from: read_health_dom.text
+        expected: ok
