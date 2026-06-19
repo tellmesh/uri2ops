@@ -1065,7 +1065,7 @@ wheels = [
 
 [[package]]
 name = "hypervisor"
-version = "0.5.8"
+version = "0.5.10"
 source = { editable = "../hypervisor" }
 dependencies = [
     { name = "fastapi" },
@@ -3681,7 +3681,7 @@ provides-extras = ["dev"]
 
 [[package]]
 name = "uri3"
-version = "0.5.8"
+version = "0.5.9"
 source = { editable = "../uri3" }
 dependencies = [
     { name = "httpx" },
